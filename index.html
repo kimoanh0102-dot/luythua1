@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toán 11 - Giám sát & Thu thập dữ liệu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Quicksand', sans-serif; background-color: #f0f4f8; color: #1e293b; }
+        .math-card { transition: all 0.3s ease; }
+        .option-btn { transition: all 0.2s; border: 2px solid #cbd5e1; }
+        .option-btn:hover:not(.correct):not(.wrong) { border-color: #3b82f6; background-color: #f0f9ff; }
+        .option-btn.correct { border-color: #22c55e; background-color: #f0fdf4; color: #15803d; font-weight: bold; }
+        .option-btn.wrong { border-color: #ef4444; background-color: #fef2f2; color: #b91c1c; }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        .cheat-warning { animation: pulse-red 1.5s infinite; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Cảnh báo giám sát (Overlay) -->
+    <div id="cheat-modal" class="hidden fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white p-8 rounded-3xl max-w-sm w-full text-center space-y-4 cheat-warning">
+            <div class="text-5xl">⚠️</div>
+            <h3 class="text-xl font-black text-red-600">CẢNH BÁO GIÁM SÁT</h3>
+            <p class="text-gray-600 text-sm font-medium">Bạn vừa thoát khỏi màn hình làm bài hoặc chuyển tab. Hành vi này đã được ghi lại vào hệ thống.</p>
+            <button onclick="closeCheatModal()" class="w-full bg-red-600 text-white font-bold py-3 rounded-xl hover:bg-red-700">TÔI ĐÃ HIỂU</button>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header id="main-header" class="hidden fixed top-0 left-0 w-full bg-white/90 backdrop-blur shadow-sm p-4 z-50">
+        <div class="max-w-2xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <div class="flex flex-col leading-tight">
+                    <span id="header-user" class="font-bold text-gray-800 text-sm"></span>
+                    <span id="header-class" class="text-gray-400 text-[10px] uppercase font-bold tracking-widest"></span>
+                </div>
+            </div>
+            <div id="quiz-progress" class="flex-1 mx-8">
+                <div class="w-full bg-gray-100 rounded-full h-2">
+                    <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+            <div id="quiz-timer" class="font-mono font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-lg text-sm border border-blue-100">10:00</div>
+        </div>
+    </header>
+
+    <main class="w-full max-w-xl">
+        <!-- SCREEN LOGIN -->
+        <div id="screen-login" class="bg-white p-10 rounded-[2.5rem] shadow-2xl space-y-8">
+            <div class="text-center space-y-2">
+                <div class="bg-blue-600 text-white w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 text-4xl shadow-xl shadow-blue-200">Σ</div>
+                <h1 class="text-3xl font-black text-gray-900 tracking-tight">Hệ Thống Kiểm Tra</h1>
+                <p class="text-gray-400 font-medium">Chương II: Lũy Thừa & Căn Thức</p>
+                <div class="inline-flex items-center bg-amber-50 text-amber-700 text-[10px] px-3 py-1 rounded-full font-bold uppercase mt-2">
+                    🚀 Chế độ giám sát tự động đang bật
+                </div>
+            </div>
+            <div class="space-y-4">
+                <div class="space-y-1">
+                    <label class="text-xs font-black text-gray-500 uppercase ml-2">Họ và tên học sinh</label>
+                    <input type="text" id="name-input" placeholder="Nhập tên đầy đủ..." class="w-full px-6 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-blue-500 outline-none transition-all font-semibold">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-black text-gray-500 uppercase ml-2">Lớp</label>
+                    <input type="text" id="class-input" placeholder="Ví dụ: 11A1..." class="w-full px-6 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-blue-500 outline-none transition-all font-semibold">
+                </div>
+                <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-5 rounded-2xl shadow-xl shadow-blue-100 transition-all active:scale-95">VÀO PHÒNG THI</button>
+            </div>
+        </div>
+
+        <!-- SCREEN MENU -->
+        <div id="screen-menu" class="hidden space-y-6">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-black text-gray-800" id="welcome-msg">Chào mừng!</h2>
+                <p class="text-gray-500">Vui lòng chọn bộ đề thi bên dưới.</p>
+            </div>
+            <div class="grid gap-4">
+                <button onclick="startQuiz(0)" class="bg-white p-6 rounded-[2rem] shadow-sm border-2 border-transparent hover:border-blue-500 text-left flex items-center group transition-all">
+                    <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center font-black mr-5 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">01</div>
+                    <div class="flex-1">
+                        <div class="font-black text-gray-800 text-lg">Lý thuyết & Mệnh đề</div>
+                        <div class="text-gray-400 text-xs font-bold uppercase tracking-wider">10 câu - 10 phút</div>
+                    </div>
+                </button>
+                <button onclick="startQuiz(1)" class="bg-white p-6 rounded-[2rem] shadow-sm border-2 border-transparent hover:border-purple-500 text-left flex items-center group transition-all">
+                    <div class="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center font-black mr-5 group-hover:bg-purple-600 group-hover:text-white transition-all shadow-sm">02</div>
+                    <div class="flex-1">
+                        <div class="font-black text-gray-800 text-lg">Biến đổi biểu thức</div>
+                        <div class="text-gray-400 text-xs font-bold uppercase tracking-wider">10 câu - 10 phút</div>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- SCREEN QUIZ -->
+        <div id="screen-quiz" class="hidden space-y-6">
+            <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                    <svg width="100" height="100" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm0 3.45l8.27 14.3H3.73L12 5.45zM11 16h2v2h-2v-2zm0-7h2v5h-2V9z"/></svg>
+                </div>
+                <div id="q-label" class="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-4">Câu hỏi 1/10</div>
+                <div id="q-text" class="text-xl font-bold text-gray-800 leading-relaxed min-h-[80px]"></div>
+            </div>
+            <div id="options" class="grid gap-3"></div>
+            
+            <div id="feedback" class="hidden bg-white p-8 rounded-[2rem] shadow-2xl border-2 animate-pop border-blue-50">
+                <div id="fb-status" class="flex items-center space-x-2 font-black mb-4"></div>
+                <div class="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-2">Hướng dẫn chi tiết:</div>
+                <div id="fb-explanation" class="text-gray-600 text-sm leading-relaxed space-y-2"></div>
+                <button id="next-btn" class="w-full mt-8 bg-gray-900 text-white font-black py-5 rounded-2xl hover:bg-black transition-all shadow-xl">TIẾP TỤC</button>
+            </div>
+        </div>
+
+        <!-- SCREEN RESULT -->
+        <div id="screen-result" class="hidden text-center space-y-8 py-10">
+            <div class="bg-white p-10 rounded-[3rem] shadow-2xl space-y-6">
+                <div class="text-6xl">📊</div>
+                <h2 class="text-4xl font-black text-gray-900">Kết quả thi</h2>
+                <div id="res-info" class="text-blue-600 font-black tracking-widest text-sm"></div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-blue-50 p-6 rounded-3xl border border-blue-100">
+                        <div class="text-[10px] text-blue-400 font-black uppercase mb-1">Điểm số</div>
+                        <div id="res-score" class="text-3xl font-black text-blue-700">0/10</div>
+                    </div>
+                    <div class="bg-gray-50 p-6 rounded-3xl border border-gray-100">
+                        <div class="text-[10px] text-gray-400 font-black uppercase mb-1">Thời gian</div>
+                        <div id="res-time" class="text-3xl font-black text-gray-800">00:00</div>
+                    </div>
+                </div>
+
+                <div class="bg-red-50 p-4 rounded-2xl border border-red-100 flex justify-between items-center">
+                    <div class="text-[10px] text-red-500 font-black uppercase">Số lần thoát màn hình:</div>
+                    <div id="res-cheats" class="text-xl font-black text-red-600">0</div>
+                </div>
+
+                <div class="bg-blue-600 text-white p-6 rounded-3xl text-left relative overflow-hidden">
+                    <h3 class="font-black text-xs uppercase tracking-widest mb-2">Phân tích chuyên sâu:</h3>
+                    <p id="res-ai" class="text-blue-50 text-sm leading-relaxed opacity-90 font-medium"></p>
+                </div>
+                
+                <div id="data-status" class="text-[10px] font-bold text-gray-400">Đang lưu dữ liệu lên hệ thống...</div>
+                <button onclick="location.reload()" class="w-full bg-gray-100 text-gray-800 font-black py-5 rounded-2xl hover:bg-gray-200">KẾT THÚC</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- CẤU HÌNH ---
+        // Dán URL Google Apps Script của bạn vào đây
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw5HmmUALA22qaEX4zkcraJgUhCfe1KsYwz3RnSMfYaKsGlIukW29muverY7RBxwHXB/exec";
+
+        const quizData = [
+            // BỘ ĐỀ 01
+            [
+                {
+                    q: "Với $a$ là số thực bất kì, mệnh đề nào sau đây **sai**?",
+                    o: ["$\\sqrt{a^2} = |a|$ ", "$\\sqrt[3]{a^3} = a$", "$\\sqrt[4]{a^4} = a$", "$\\sqrt[5]{a^5} = a$"],
+                    a: 2,
+                    e: "Theo định nghĩa căn bậc $n$:<br>1. Nếu $n$ lẻ: $\\sqrt[n]{a^n} = a$.<br>2. Nếu $n$ chẵn: $\\sqrt[n]{a^n} = |a|$.<br>Vậy $\\sqrt[4]{a^4} = |a|$. Mệnh đề C sai vì thiếu dấu giá trị tuyệt đối."
+                },
+                {
+                    q: "Với $a$ là số thực dương tùy ý, biểu thức $a^2 \\cdot \\sqrt{a}$ bằng:",
+                    o: ["$a^1$", "$a^{\\frac{3}{2}}$", "$a^{\\frac{5}{2}}$", "$a^4$"],
+                    a: 2,
+                    e: "Biến đổi căn thức về lũy thừa: $\\sqrt{a} = a^{\\frac{1}{2}}$. Áp dụng nhân hai lũy thừa cùng cơ số: $a^2 \\cdot a^{\\frac{1}{2}} = a^{2 + \\frac{1}{2}} = a^{\\frac{5}{2}}$."
+                },
+                {
+                    q: "Mệnh đề nào sau đây đúng với mọi $a, b > 0$ và số nguyên dương $n \\ge 2$?",
+                    o: ["$\\sqrt[n]{a+b} = \\sqrt[n]{a} + \\sqrt[n]{b}$", "$\\sqrt[n]{ab} = \\sqrt[n]{a} \\cdot \\sqrt[n]{b}$", "$\\sqrt[n]{a-b} = \\sqrt[n]{a} - \\sqrt[n]{b}$", "$\\frac{\\sqrt[n]{a}}{\\sqrt[n]{b}} = \\sqrt[n]{a-b}$"],
+                    a: 1,
+                    e: "Tính chất căn bậc $n$: Căn của một tích bằng tích các căn. Các phép cộng, trừ không có tính chất này."
+                },
+                {
+                    q: "Cho $a$ là số thực dương tùy ý, biểu thức $a^{\\frac{1}{4}} \\cdot \\sqrt{a}$ bằng:",
+                    o: ["$a^1$", "$a^{\\frac{3}{4}}$", "$a^{\\frac{1}{2}}$", "$a^{\\frac{5}{4}}$"],
+                    a: 1,
+                    e: "$a^{\\frac{1}{4}} \\cdot a^{\\frac{1}{2}} = a^{\\frac{1}{4} + \\frac{1}{2}} = a^{\\frac{3}{4}}$."
+                },
+                {
+                    q: "Rút gọn biểu thức $P = \\sqrt[3]{x \\cdot \\sqrt[4]{x}}$ với $x > 0$:",
+                    o: ["$x^{\\frac{1}{12}}$", "$x^{\\frac{5}{12}}$", "$x^{\\frac{2}{3}}$", "$x^{\\frac{4}{3}}$"],
+                    a: 1,
+                    e: "Biến đổi từ trong ra: $\\sqrt[4]{x} = x^{\\frac{1}{4}} \\Rightarrow x \\cdot x^{\\frac{1}{4}} = x^{\\frac{5}{4}} \\Rightarrow \\sqrt[3]{x^{\\frac{5}{4}}} = x^{\\frac{5}{12}}$."
+                },
+                {
+                    q: "Nếu $a^{\\frac{1}{2}} > a^{\\frac{1}{6}}$ thì điều kiện của $a$ là:",
+                    o: ["$a < 0$", "$0 < a < 1$", "$a > 1$", "$a = 1$"],
+                    a: 2,
+                    e: "Vì số mũ $\\frac{1}{2} > \\frac{1}{6}$ và hàm số lũy thừa giữ nguyên chiều so sánh nên cơ số $a > 1$."
+                },
+                {
+                    q: "Cho $P = a^{\\frac{1}{3}} \\cdot \\sqrt{a}$ với $a > 0$. Khẳng định đúng là:",
+                    o: ["$P = a^{\\frac{1}{6}}$", "$P = a^{\\frac{2}{3}}$", "$P = a^{\\frac{1}{2}}$", "$P = a^{\\frac{5}{6}}$"],
+                    a: 3,
+                    e: "$P = a^{\\frac{1}{3} + \\frac{1}{2}} = a^{\\frac{5}{6}}$."
+                },
+                {
+                    q: "Công thức lũy thừa nào sau đây **SAI**?",
+                    o: ["$(ab)^n = a^n b^n$", "$a^m a^n = a^{m+n}$", "$(a^m)^n = a^{m+n}$", "$\\frac{a^m}{a^n} = a^{m-n}$"],
+                    a: 2,
+                    e: "Sai ở C. Quy tắc đúng: $(a^m)^n = a^{m \\cdot n}$."
+                },
+                {
+                    q: "Viết $a^{\\frac{2}{3}} \\cdot \\sqrt{a}$ ($a>0$) dưới dạng lũy thừa:",
+                    o: ["$a^{\\frac{5}{6}}$", "$a^{\\frac{1}{3}}$", "$a^{\\frac{7}{6}}$", "$a^{\\frac{4}{3}}$"],
+                    a: 2,
+                    e: "$\\frac{2}{3} + \\frac{1}{2} = \\frac{7}{6}$."
+                },
+                {
+                    q: "Biểu thức tương đương với $\\sqrt[n]{a}$ ($a>0, n \\ge 2$)?",
+                    o: ["$a^n$", "$a^{\\frac{1}{n}}$", "$a^{n-1}$", "$a^{-n}$"],
+                    a: 1,
+                    e: "Theo định nghĩa: $\\sqrt[n]{a} = a^{1/n}$."
+                }
+            ],
+            // BỘ ĐỀ 02
+            [
+                {
+                    q: "Tính giá trị $P = \\sqrt[3]{2 \\cdot \\sqrt[5]{16}} \\cdot 8^{\\frac{2}{15}}$",
+                    o: ["2", "4", "$\\sqrt{2}$", "1"],
+                    a: 0,
+                    e: "Đưa về cơ số 2: $\\sqrt[3]{2 \\cdot 2^{4/5}} = 2^{3/5} = 2^{9/15}$. Nhân với $2^{6/15} \\Rightarrow 2^1 = 2$."
+                },
+                {
+                    q: "Rút gọn $P = \\frac{a^{\\sqrt{3}+1} \\cdot a^{2-\\sqrt{3}}}{(a^{\\sqrt{2}-2})^{\\sqrt{2}+2}}$ ($a > 0$):",
+                    o: ["$a^1$", "$a^3$", "$a^4$", "$a^5$"],
+                    a: 3,
+                    e: "Tử số: $a^3$. Mẫu số: $a^{2-4} = a^{-2}$. Kết quả $a^3 / a^{-2} = a^5$."
+                },
+                {
+                    q: "Rút gọn $K = \\sqrt[3]{\\sqrt{a^4 \\cdot \\sqrt[3]{a}}}$ ($a > 0$):",
+                    o: ["$a^{\\frac{1}{2}}$", "$a^{\\frac{13}{9}}$", "$a^{\\frac{13}{18}}$", "$a^{\\frac{14}{15}}$"],
+                    a: 2,
+                    e: "Biến đổi tầng: $a^{(4+1/3) \\cdot 1/2 \\cdot 1/3} = a^{13/18}$."
+                },
+                {
+                    q: "Cho $x = 2$, tính giá trị $x^{\\frac{3}{4}} \\cdot \\sqrt[4]{x}$:",
+                    o: ["2", "4", "$\\sqrt{2}$", "1"],
+                    a: 0,
+                    e: "$x^{3/4 + 1/4} = x^1 = 2$."
+                },
+                {
+                    q: "Biết $a = \\frac{\\sqrt[3]{16}}{\\sqrt[4]{8}} = 2^k$. Tìm $k$?",
+                    o: ["$7/12$", "$5/12$", "$1/12$", "$11/12$"],
+                    a: 0,
+                    e: "$k = 4/3 - 3/4 = 7/12$."
+                },
+                {
+                    q: "Viết $\\sqrt{x} \\cdot \\sqrt[3]{x} \\cdot \\sqrt[6]{x^5}$ ($x>0$) dưới dạng lũy thừa:",
+                    o: ["$x^2$", "$x^{\\frac{5}{6}}$", "$x^{\\frac{5}{3}}$", "$x^1$"],
+                    a: 2,
+                    e: "$1/2 + 1/3 + 5/6 = 10/6 = 5/3$."
+                },
+                {
+                    q: "Nếu $a+b=1$, tính $P = \\frac{a^{\\frac{1}{3}}\\sqrt{b} + b^{\\frac{1}{3}}\\sqrt{a}}{\\sqrt[6]{a} + \\sqrt[6]{b}}$:",
+                    o: ["$\\sqrt[3]{ab}$", "$\\sqrt{ab}$", "$a+b$", "$\\sqrt[6]{ab}$"],
+                    a: 0,
+                    e: "Đặt $(ab)^{1/3}$ làm nhân tử chung ở tử số, rút gọn được $\\sqrt[3]{ab}$."
+                },
+                {
+                    q: "Tính $A = \\sqrt[3]{7 \\cdot \\sqrt{7 \\cdot \\sqrt[3]{7}}} \\cdot 7^{\\frac{13}{9}}$:",
+                    o: ["7", "49", "1", "343"],
+                    a: 1,
+                    e: "$7^{5/9} \\cdot 7^{13/9} = 7^{18/9} = 7^2 = 49$."
+                },
+                {
+                    q: "Rút gọn $M = (a^{-1} + b^{-1}) : (a+b)$ ($a, b > 0$):",
+                    o: ["$ab$", "$1/ab$", "$a+b$", "1"],
+                    a: 1,
+                    e: "$(1/a + 1/b) : (a+b) = \\frac{a+b}{ab} \\cdot \\frac{1}{a+b} = 1/ab$."
+                },
+                {
+                    q: "Tính $A = 27^{\\frac{1}{3}} - 16^{\\frac{1}{4}} + 25^{\\frac{1}{2}}$:",
+                    o: ["6", "4", "10", "12"],
+                    a: 0,
+                    e: "$3 - 2 + 5 = 6$."
+                }
+            ]
+        ];
+
+        let userName = "", userClass = "";
+        let currentSet = 0, currentQuestion = 0, score = 0;
+        let timeLeft = 600, timerId = null;
+        let startTime = 0, cheatCount = 0;
+
+        // --- HỆ THỐNG GIÁM SÁT ---
+        document.addEventListener("visibilitychange", function() {
+            if (document.visibilityState === 'hidden' && timerId) {
+                cheatCount++;
+                document.getElementById('cheat-modal').classList.remove('hidden');
+            }
+        });
+
+        window.onblur = function() {
+            if (timerId) {
+                // Có thể bỏ qua nếu muốn chỉ dùng visibilitychange
+                // cheatCount++; 
+            }
+        };
+
+        function closeCheatModal() {
+            document.getElementById('cheat-modal').classList.add('hidden');
+        }
+
+        function handleLogin() {
+            userName = document.getElementById('name-input').value.trim();
+            userClass = document.getElementById('class-input').value.trim();
+            if (!userName || !userClass) {
+                alert("Bạn chưa nhập đủ thông tin kìa!");
+                return;
+            }
+            document.getElementById('welcome-msg').innerText = `Chào ${userName}! 🎯`;
+            switchScreen('screen-menu');
+        }
+
+        function switchScreen(id) {
+            ['screen-login', 'screen-menu', 'screen-quiz', 'screen-result'].forEach(s => {
+                document.getElementById(s).classList.add('hidden');
+            });
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function startQuiz(setIndex) {
+            currentSet = setIndex;
+            currentQuestion = 0;
+            score = 0;
+            timeLeft = 600;
+            cheatCount = 0;
+            startTime = Date.now();
+            
+            document.getElementById('header-user').innerText = userName.toUpperCase();
+            document.getElementById('header-class').innerText = "LỚP: " + userClass;
+            document.getElementById('main-header').classList.remove('hidden');
+            
+            switchScreen('screen-quiz');
+            loadQuestion();
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timerId);
+            timerId = setInterval(() => {
+                timeLeft--;
+                const m = Math.floor(timeLeft / 60);
+                const s = timeLeft % 60;
+                document.getElementById('quiz-timer').innerText = `${m}:${s < 10 ? '0'+s : s}`;
+                if (timeLeft <= 0) endQuiz();
+            }, 1000);
+        }
+
+        function loadQuestion() {
+            const data = quizData[currentSet][currentQuestion];
+            document.getElementById('q-label').innerText = `CÂU HỎI ${currentQuestion + 1}/${quizData[currentSet].length}`;
+            document.getElementById('q-text').innerHTML = data.q;
+            
+            const optionsDiv = document.getElementById('options');
+            optionsDiv.innerHTML = '';
+            data.o.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "option-btn w-full bg-white p-5 rounded-2xl text-left flex items-center shadow-sm font-bold animate-pop";
+                btn.innerHTML = `<span class="bg-gray-100 text-gray-400 w-8 h-8 rounded-lg flex items-center justify-center mr-4 font-black text-xs transition-colors">${String.fromCharCode(65 + idx)}</span> <span class="flex-1">${opt}</span>`;
+                btn.onclick = () => checkAnswer(idx, btn);
+                optionsDiv.appendChild(btn);
+            });
+
+            document.getElementById('feedback').classList.add('hidden');
+            document.getElementById('progress-bar').style.width = `${(currentQuestion / quizData[currentSet].length) * 100}%`;
+            renderMathContent();
+        }
+
+        function checkAnswer(idx, btn) {
+            const data = quizData[currentSet][currentQuestion];
+            const btns = document.querySelectorAll('.option-btn');
+            btns.forEach(b => b.onclick = null);
+
+            if (idx === data.a) {
+                btn.classList.add('correct');
+                btn.querySelector('span').classList.add('bg-green-500', 'text-white');
+                score++;
+                document.getElementById('fb-status').innerHTML = `<span class="text-green-600">✓ RẤT GIỎI!</span>`;
+            } else {
+                btn.classList.add('wrong');
+                btn.querySelector('span').classList.add('bg-red-500', 'text-white');
+                btns[data.a].classList.add('correct');
+                document.getElementById('fb-status').innerHTML = `<span class="text-red-600">✕ CHƯA CHÍNH XÁC</span>`;
+            }
+
+            document.getElementById('fb-explanation').innerHTML = data.e;
+            document.getElementById('feedback').classList.remove('hidden');
+            renderMathContent();
+
+            document.getElementById('next-btn').onclick = () => {
+                currentQuestion++;
+                if (currentQuestion < quizData[currentSet].length) {
+                    loadQuestion();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    endQuiz();
+                }
+            };
+        }
+
+        async function endQuiz() {
+            clearInterval(timerId);
+            timerId = null;
+            document.getElementById('main-header').classList.add('hidden');
+            switchScreen('screen-result');
+
+            const duration = Math.floor((Date.now() - startTime) / 1000);
+            const m = Math.floor(duration / 60);
+            const s = duration % 60;
+            const timeStr = `${m}:${s < 10 ? '0'+s : s}`;
+
+            document.getElementById('res-info').innerText = `${userName.toUpperCase()} - LỚP ${userClass}`;
+            document.getElementById('res-score').innerText = `${score}/10`;
+            document.getElementById('res-time').innerText = timeStr;
+            document.getElementById('res-cheats').innerText = cheatCount;
+
+            let aiMsg = "";
+            if (score === 10 && cheatCount === 0) aiMsg = "Hoàn hảo! Bạn không chỉ nắm vững kiến thức mà còn rất nghiêm túc trong bài kiểm tra.";
+            else if (score >= 7) aiMsg = "Rất tốt! Bạn hiểu bài nhưng cần chú ý hơn về tốc độ và tính tỉ mỉ.";
+            else aiMsg = "Cần nỗ lực hơn! Hãy xem lại các bước giải chi tiết để rút kinh nghiệm.";
+
+            document.getElementById('res-ai').innerText = aiMsg;
+
+            // GỬI DỮ LIỆU LÊN GOOGLE SHEETS
+            if (GOOGLE_SCRIPT_URL !== "DÁN_URL_CỦA_BẠN_VÀO_ĐÂY") {
+                try {
+                    const payload = {
+                        name: userName,
+                        class: userClass,
+                        quizSet: currentSet + 1,
+                        score: score,
+                        total: quizData[currentSet].length,
+                        timeSpent: timeStr,
+                        cheatCount: cheatCount,
+                        status: cheatCount > 0 ? "Phát hiện gian lận" : "Nghiêm túc"
+                    };
+                    
+                    const response = await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    document.getElementById('data-status').innerText = "✅ Dữ liệu đã được lưu thành công.";
+                } catch (err) {
+                    document.getElementById('data-status').innerText = "❌ Lỗi khi gửi dữ liệu.";
+                }
+            } else {
+                document.getElementById('data-status').innerText = "⚠️ Chưa cấu hình URL Google Sheet.";
+            }
+        }
+
+        function renderMathContent() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false}
+                ],
+                throwOnError: false
+            });
+        }
+
+        window.onload = () => { renderMathContent(); };
+    </script>
+</body>
+</html>
